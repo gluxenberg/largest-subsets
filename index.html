@@ -71,9 +71,13 @@
     th { background: #1a1a2e; color: #fff; font-weight: 600; cursor: pointer; }
     th:hover { background: #252545; }
     tbody tr:hover { background: #2a2a4a; }
-    .flagged { background: #4a1a1a !important; }
-    .flag-yes { color: #ff6b6b; font-weight: bold; }
-    .flag-no { color: #51cf66; }
+    .high-priority { background: #4a1a1a !important; }
+    .medium-priority { background: #4a3a1a !important; }
+    .review-priority { background: #3a3a1a !important; }
+    .priority-high { color: #ff6b6b; font-weight: bold; }
+    .priority-medium { color: #ffa500; font-weight: bold; }
+    .priority-review { color: #ffff00; }
+    .priority-standard { color: #51cf66; }
     
     .chart-container { 
       background: #1a1a2e; padding: 20px; border-radius: 6px; 
@@ -97,14 +101,24 @@
     .results-header {
       display: flex; justify-content: space-between; align-items: center; margin: 20px 0;
     }
+    .methodology-note {
+      background: #2d4a2d; border: 1px solid #51cf66; color: #ccffcc; 
+      padding: 15px; border-radius: 6px; margin: 15px 0; font-size: 13px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>Largest Subsets Test</h1>
-      <div class="subtitle">Forensic Analytics Tool - Identify unusual patterns in transaction data</div>
+      <div class="subtitle">Mark Nigrini's Forensic Analytics - Identify unusually large subset totals</div>
     </header>
+
+    <div class="methodology-note">
+      <strong>Nigrini's Methodology:</strong> This test groups transactions by subset identifier (vendor, branch, etc.), 
+      calculates total amounts per subset, then ranks them by size. The largest subsets are identified for investigation 
+      based on their <strong>ranking</strong>, <strong>percentage of total</strong>, and <strong>materiality</strong> - not statistical tests.
+    </div>
 
     <!-- File Upload Section -->
     <div class="section">
@@ -118,30 +132,47 @@
 
     <!-- Column Selection Section -->
     <div class="section" id="columnSection" style="display: none;">
-      <h2>2. Select Columns</h2>
+      <h2>2. Configure Analysis</h2>
       <div class="form-grid">
         <div class="form-group">
-          <label for="subsetColumn">Subset Column (e.g., Vendor ID):</label>
+          <label for="subsetColumn">Subset Column (e.g., Vendor ID, Branch):</label>
           <select id="subsetColumn"></select>
         </div>
         <div class="form-group">
-          <label for="valueColumn">Value Column (amounts):</label>
+          <label for="valueColumn">Amount Column:</label>
           <select id="valueColumn"></select>
-        </div>
-        <div class="form-group">
-          <label for="dateColumn">Date Column (optional):</label>
-          <select id="dateColumn"></select>
         </div>
       </div>
       
+      <!-- Materiality Thresholds Section -->
+      <h3 style="margin-top: 30px; color: #fff;">Materiality Thresholds (% of Total)</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="highPriorityThreshold">High Priority (>= % of total):</label>
+          <input type="number" id="highPriorityThreshold" value="15" min="1" max="100" step="0.1" />
+        </div>
+        <div class="form-group">
+          <label for="mediumPriorityThreshold">Medium Priority (>= % of total):</label>
+          <input type="number" id="mediumPriorityThreshold" value="8" min="1" max="100" step="0.1" />
+        </div>
+        <div class="form-group">
+          <label for="reviewPriorityThreshold">Review Priority (>= % of total):</label>
+          <input type="number" id="reviewPriorityThreshold" value="3" min="0.1" max="100" step="0.1" />
+        </div>
+      </div>
+      
+      <div class="methodology-note" style="margin-top: 15px;">
+        <strong>Materiality Guidance:</strong>
+        <br>• <strong>High Priority:</strong> Subsets requiring immediate investigation due to significant concentration risk
+        <br>• <strong>Medium Priority:</strong> Subsets warranting detailed review and enhanced testing  
+        <br>• <strong>Review Priority:</strong> Subsets for monitoring and sample testing based on business context
+        <br>• <strong>Standard:</strong> Below review threshold - routine monitoring sufficient
+      </div>
+
       <div class="form-grid" style="margin-top: 20px;">
         <div class="form-group">
           <label for="minTransactions">Min transactions per subset:</label>
           <input type="number" id="minTransactions" value="1" min="1" />
-        </div>
-        <div class="form-group">
-          <label for="rsfThreshold">RSF threshold (flag ratio):</label>
-          <input type="number" id="rsfThreshold" value="3" step="0.1" min="1" />
         </div>
         <div class="form-group">
           <button id="analyzeBtn" disabled>Run Analysis</button>
@@ -166,24 +197,32 @@
           <div class="stat-label">Total Subsets</div>
         </div>
         <div class="stat">
-          <div class="stat-value" id="flaggedSubsets">0</div>
-          <div class="stat-label">Flagged Subsets</div>
+          <div class="stat-value" id="priorityBreakdown">H:0 M:0 R:0</div>
+          <div class="stat-label">Priority Breakdown</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="totalAmount">$0</div>
+          <div class="stat-label">Total Amount</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="topSubsetPct">0%</div>
+          <div class="stat-label">Top Subset % of Total</div>
         </div>
         <div class="stat">
           <div class="stat-value" id="totalRows">0</div>
-          <div class="stat-label">Total Rows</div>
+          <div class="stat-label">Total Transactions</div>
         </div>
       </div>
 
       <!-- Chart -->
       <div class="chart-container">
-        <h3 style="margin-bottom: 15px; color: #fff;">Top 20 Subsets by Largest Value</h3>
+        <h3 style="margin-bottom: 15px; color: #fff;">Top 25 Subsets by Total Amount</h3>
         <canvas id="resultsChart"></canvas>
       </div>
 
       <!-- Results Table with Export Buttons -->
       <div class="results-header">
-        <h3 style="color: #fff; margin: 0;">Detailed Results</h3>
+        <h3 style="color: #fff; margin: 0;">Detailed Results (Sorted by Total Amount)</h3>
         <div class="export-buttons">
           <button id="exportCsv" class="btn-csv">Export CSV</button>
           <button id="exportPdf" class="btn-pdf">Export PDF</button>
@@ -195,12 +234,12 @@
           <thead>
             <tr>
               <th onclick="sortTable(0)">Subset</th>
-              <th onclick="sortTable(1)">Largest Value</th>
-              <th onclick="sortTable(2)">Second Value</th>
-              <th onclick="sortTable(3)">RSF Ratio</th>
-              <th onclick="sortTable(4)">Count</th>
-              <th onclick="sortTable(5)">IQR Flag</th>
-              <th onclick="sortTable(6)">RSF Flag</th>
+              <th onclick="sortTable(1)">Total Amount</th>
+              <th onclick="sortTable(2)">Transaction Count</th>
+              <th onclick="sortTable(3)">Average per Transaction</th>
+              <th onclick="sortTable(4)">% of Total</th>
+              <th onclick="sortTable(5)">Rank</th>
+              <th onclick="sortTable(6)">Investigation Priority</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -272,18 +311,15 @@
     function setupColumnSelectors() {
       const subsetSelect = document.getElementById('subsetColumn');
       const valueSelect = document.getElementById('valueColumn');
-      const dateSelect = document.getElementById('dateColumn');
 
       // Clear existing options
       subsetSelect.innerHTML = '<option value="">-- Select Column --</option>';
       valueSelect.innerHTML = '<option value="">-- Select Column --</option>';
-      dateSelect.innerHTML = '<option value="">-- Select Column (Optional) --</option>';
 
       // Add column options
       headers.forEach(header => {
         subsetSelect.innerHTML += `<option value="${header}">${header}</option>`;
         valueSelect.innerHTML += `<option value="${header}">${header}</option>`;
-        dateSelect.innerHTML += `<option value="${header}">${header}</option>`;
       });
 
       // Add change listeners to enable/disable analyze button
@@ -325,12 +361,16 @@
       const subsetCol = document.getElementById('subsetColumn').value;
       const valueCol = document.getElementById('valueColumn').value;
       const minTrans = parseInt(document.getElementById('minTransactions').value) || 1;
-      const rsfThreshold = parseFloat(document.getElementById('rsfThreshold').value) || 3;
+      const highPriorityThreshold = parseFloat(document.getElementById('highPriorityThreshold').value) || 15;
+      const mediumPriorityThreshold = parseFloat(document.getElementById('mediumPriorityThreshold').value) || 8;
+      const reviewPriorityThreshold = parseFloat(document.getElementById('reviewPriorityThreshold').value) || 3;
 
       if (!subsetCol || !valueCol) return;
 
-      // Group data by subset
+      // Group data by subset and calculate totals
       const groups = {};
+      let totalAmount = 0;
+      let validRowCount = 0;
       
       csvData.forEach(row => {
         const subset = row[subsetCol];
@@ -339,69 +379,76 @@
         if (!subset || isNaN(value)) return;
         
         if (!groups[subset]) {
-          groups[subset] = [];
+          groups[subset] = {
+            total: 0,
+            count: 0,
+            transactions: []
+          };
         }
-        groups[subset].push(value);
+        
+        groups[subset].total += value;
+        groups[subset].count++;
+        groups[subset].transactions.push(value);
+        totalAmount += value;
+        validRowCount++;
       });
 
-      // Analyze each group
+      // Create results array with subset totals
       results = [];
       Object.keys(groups).forEach(subset => {
-        const values = groups[subset].sort((a, b) => b - a); // Sort descending
+        const group = groups[subset];
         
-        if (values.length < minTrans) return;
+        if (group.count < minTrans) return;
 
-        const largest = values[0];
-        const second = values[1] || null;
-        const rsf = second ? largest / second : Infinity;
+        const avgPerTransaction = group.total / group.count;
+        const percentOfTotal = (group.total / totalAmount) * 100;
         
         results.push({
           subset,
-          largest,
-          second,
-          rsf,
-          count: values.length,
-          iqrFlag: false, // Will calculate below
-          rsfFlag: rsf >= rsfThreshold
+          total: group.total,
+          count: group.count,
+          avgPerTransaction,
+          percentOfTotal,
+          rank: 0, // Will be set below
+          investigationPriority: 'Standard' // Will be set below
         });
       });
 
-      // Calculate IQR flags
-      const largestValues = results.map(r => r.largest);
-      const q1 = quantile(largestValues, 0.25);
-      const q3 = quantile(largestValues, 0.75);
-      const iqr = q3 - q1;
-      const upperBound = q3 + 1.5 * iqr;
+      // Sort by total amount descending (key part of Nigrini's test)
+      results.sort((a, b) => b.total - a.total);
 
-      results.forEach(result => {
-        result.iqrFlag = result.largest > upperBound;
+      // Assign ranks and investigation priorities based on materiality thresholds
+      results.forEach((result, index) => {
+        result.rank = index + 1;
+        
+        // Set investigation priority based on materiality thresholds
+        if (result.percentOfTotal >= highPriorityThreshold) {
+          result.investigationPriority = 'High Priority';
+        } else if (result.percentOfTotal >= mediumPriorityThreshold) {
+          result.investigationPriority = 'Medium Priority';
+        } else if (result.percentOfTotal >= reviewPriorityThreshold) {
+          result.investigationPriority = 'Review';
+        } else {
+          result.investigationPriority = 'Standard';
+        }
       });
 
-      // Sort by largest value descending
-      results.sort((a, b) => b.largest - a.largest);
-
-      displayResults();
+      displayResults(totalAmount, validRowCount);
       document.getElementById('resultsSection').style.display = 'block';
     }
 
-    function quantile(arr, q) {
-      const sorted = [...arr].sort((a, b) => a - b);
-      const pos = (sorted.length - 1) * q;
-      const base = Math.floor(pos);
-      const rest = pos - base;
-      if (sorted[base + 1] !== undefined) {
-        return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
-      } else {
-        return sorted[base];
-      }
-    }
-
-    function displayResults() {
+    function displayResults(totalAmount, validRowCount) {
       // Update statistics
-      const flaggedCount = results.filter(r => r.iqrFlag || r.rsfFlag).length;
+      const highPriorityCount = results.filter(r => r.investigationPriority === 'High Priority').length;
+      const mediumPriorityCount = results.filter(r => r.investigationPriority === 'Medium Priority').length;
+      const reviewPriorityCount = results.filter(r => r.investigationPriority === 'Review').length;
+      const topSubsetPct = results.length > 0 ? results[0].percentOfTotal : 0;
+      
       document.getElementById('totalSubsets').textContent = results.length;
-      document.getElementById('flaggedSubsets').textContent = flaggedCount;
-      document.getElementById('totalRows').textContent = csvData.length;
+      document.getElementById('priorityBreakdown').textContent = `H:${highPriorityCount} M:${mediumPriorityCount} R:${reviewPriorityCount}`;
+      document.getElementById('totalAmount').textContent = '$' + totalAmount.toLocaleString();
+      document.getElementById('topSubsetPct').textContent = topSubsetPct.toFixed(1) + '%';
+      document.getElementById('totalRows').textContent = validRowCount;
 
       // Display table and chart
       displayResultsTable();
@@ -414,25 +461,35 @@
 
       results.forEach(result => {
         const row = tbody.insertRow();
-        if (result.iqrFlag || result.rsfFlag) {
-          row.classList.add('flagged');
+        
+        // Apply row styling based on priority
+        if (result.investigationPriority === 'High Priority') {
+          row.classList.add('high-priority');
+        } else if (result.investigationPriority === 'Medium Priority') {
+          row.classList.add('medium-priority');
+        } else if (result.investigationPriority === 'Review') {
+          row.classList.add('review-priority');
         }
+
+        const priorityClass = result.investigationPriority === 'High Priority' ? 'priority-high' : 
+                             result.investigationPriority === 'Medium Priority' ? 'priority-medium' : 
+                             result.investigationPriority === 'Review' ? 'priority-review' : 'priority-standard';
 
         row.innerHTML = `
           <td>${result.subset}</td>
-          <td>$${result.largest.toLocaleString()}</td>
-          <td>${result.second ? '$' + result.second.toLocaleString() : '—'}</td>
-          <td>${isFinite(result.rsf) ? result.rsf.toFixed(2) : '∞'}</td>
+          <td>$${result.total.toLocaleString()}</td>
           <td>${result.count}</td>
-          <td class="${result.iqrFlag ? 'flag-yes' : 'flag-no'}">${result.iqrFlag ? 'YES' : 'NO'}</td>
-          <td class="${result.rsfFlag ? 'flag-yes' : 'flag-no'}">${result.rsfFlag ? 'YES' : 'NO'}</td>
+          <td>$${result.avgPerTransaction.toLocaleString()}</td>
+          <td>${result.percentOfTotal.toFixed(1)}%</td>
+          <td>${result.rank}</td>
+          <td class="${priorityClass}">${result.investigationPriority}</td>
         `;
       });
     }
 
     function displayChart() {
       const ctx = document.getElementById('resultsChart').getContext('2d');
-      const top20 = results.slice(0, 20);
+      const top25 = results.slice(0, 25);
       
       if (window.myChart) {
         window.myChart.destroy();
@@ -441,11 +498,13 @@
       window.myChart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: top20.map(r => r.subset.length > 15 ? r.subset.substring(0, 15) + '...' : r.subset),
+          labels: top25.map(r => r.subset.length > 15 ? r.subset.substring(0, 15) + '...' : r.subset),
           datasets: [{
-            label: 'Largest Value',
-            data: top20.map(r => r.largest),
-            backgroundColor: top20.map(r => (r.iqrFlag || r.rsfFlag) ? '#ff6b6b' : '#0f4c75'),
+            label: 'Total Amount',
+            data: top25.map(r => r.total),
+            backgroundColor: top25.map(r => r.investigationPriority === 'High Priority' ? '#ff6b6b' : 
+                                           r.investigationPriority === 'Medium Priority' ? '#ffa500' :
+                                           r.investigationPriority === 'Review' ? '#ffff00' : '#0f4c75'),
             borderColor: '#333',
             borderWidth: 1
           }]
@@ -465,7 +524,7 @@
               grid: { color: '#444' }
             },
             x: {
-              ticks: { color: '#ccc' },
+              ticks: { color: '#ccc', maxRotation: 45 },
               grid: { color: '#444' }
             }
           },
@@ -474,7 +533,14 @@
             tooltip: {
               callbacks: {
                 label: function(context) {
-                  return `$${context.parsed.y.toLocaleString()}`;
+                  const result = top25[context.dataIndex];
+                  return [
+                    `Total: $${context.parsed.y.toLocaleString()}`,
+                    `Rank: ${result.rank}`,
+                    `Transactions: ${result.count}`,
+                    `% of Total: ${result.percentOfTotal.toFixed(1)}%`,
+                    `Priority: ${result.investigationPriority}`
+                  ];
                 }
               }
             }
@@ -495,12 +561,12 @@
         let aVal, bVal;
         switch(columnIndex) {
           case 0: aVal = a.subset; bVal = b.subset; break;
-          case 1: aVal = a.largest; bVal = b.largest; break;
-          case 2: aVal = a.second || 0; bVal = b.second || 0; break;
-          case 3: aVal = a.rsf; bVal = b.rsf; break;
-          case 4: aVal = a.count; bVal = b.count; break;
-          case 5: aVal = a.iqrFlag; bVal = b.iqrFlag; break;
-          case 6: aVal = a.rsfFlag; bVal = b.rsfFlag; break;
+          case 1: aVal = a.total; bVal = b.total; break;
+          case 2: aVal = a.count; bVal = b.count; break;
+          case 3: aVal = a.avgPerTransaction; bVal = b.avgPerTransaction; break;
+          case 4: aVal = a.percentOfTotal; bVal = b.percentOfTotal; break;
+          case 5: aVal = a.rank; bVal = b.rank; break;
+          case 6: aVal = a.investigationPriority; bVal = b.investigationPriority; break;
         }
 
         if (typeof aVal === 'string') {
@@ -515,19 +581,18 @@
 
     function exportToCsv() {
       const exportData = [
-        ['Subset', 'Largest Value', 'Second Value', 'RSF Ratio', 'Transaction Count', 'IQR Flag', 'RSF Flag', 'Overall Flag']
+        ['Rank', 'Subset', 'Total Amount', 'Transaction Count', 'Average per Transaction', 'Percent of Total', 'Investigation Priority']
       ];
 
       results.forEach(result => {
         exportData.push([
+          result.rank,
           result.subset,
-          result.largest,
-          result.second || '',
-          isFinite(result.rsf) ? result.rsf.toFixed(2) : 'Infinity',
+          result.total.toFixed(2),
           result.count,
-          result.iqrFlag ? 'YES' : 'NO',
-          result.rsfFlag ? 'YES' : 'NO',
-          (result.iqrFlag || result.rsfFlag) ? 'FLAGGED' : 'OK'
+          result.avgPerTransaction.toFixed(2),
+          result.percentOfTotal.toFixed(2),
+          result.investigationPriority
         ]);
       });
 
@@ -552,32 +617,40 @@
       // Add header
       doc.setFontSize(16);
       doc.text('Largest Subsets Analysis Report', 20, 20);
-      
       doc.setFontSize(10);
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 30);
-      doc.text(`Total Subsets: ${results.length}`, 20, 35);
-      doc.text(`Flagged Subsets: ${results.filter(r => r.iqrFlag || r.rsfFlag).length}`, 20, 40);
-      doc.text(`Total Records: ${csvData.length}`, 20, 45);
+      doc.text('Mark Nigrini\'s Forensic Analytics Method', 20, 25);
+      
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 35);
+      doc.text(`Total Subsets Analyzed: ${results.length}`, 20, 40);
+      doc.text(`Priority Breakdown: ${document.getElementById('priorityBreakdown').textContent}`, 20, 45);
+      doc.text(`Total Transactions: ${document.getElementById('totalRows').textContent}`, 20, 50);
+      doc.text(`Total Amount: ${document.getElementById('totalAmount').textContent}`, 20, 55);
+      doc.text(`Largest Subset %: ${document.getElementById('topSubsetPct').textContent}`, 20, 60);
+      
+      const highThreshold = document.getElementById('highPriorityThreshold').value;
+      const mediumThreshold = document.getElementById('mediumPriorityThreshold').value;
+      const reviewThreshold = document.getElementById('reviewPriorityThreshold').value;
+      doc.text(`Materiality Thresholds: High >=${highThreshold}%, Medium >=${mediumThreshold}%, Review >=${reviewThreshold}%`, 20, 65);
 
       // Prepare table data
       const tableData = results.map(result => [
+        result.rank.toString(),
         result.subset,
-        `$${result.largest.toLocaleString()}`,
-        result.second ? `$${result.second.toLocaleString()}` : '—',
-        isFinite(result.rsf) ? result.rsf.toFixed(2) : '∞',
+        `$${result.total.toLocaleString()}`,
         result.count.toString(),
-        result.iqrFlag ? 'YES' : 'NO',
-        result.rsfFlag ? 'YES' : 'NO'
+        `$${result.avgPerTransaction.toLocaleString()}`,
+        `${result.percentOfTotal.toFixed(1)}%`,
+        result.investigationPriority
       ]);
 
       // Add table
       doc.autoTable({
-        head: [['Subset', 'Largest Value', 'Second Value', 'RSF Ratio', 'Count', 'IQR Flag', 'RSF Flag']],
+        head: [['Rank', 'Subset', 'Total Amount', 'Count', 'Avg/Trans', '% Total', 'Priority']],
         body: tableData,
-        startY: 55,
+        startY: 75,
         styles: {
-          fontSize: 8,
-          cellPadding: 2
+          fontSize: 7,
+          cellPadding: 1.5
         },
         headStyles: {
           fillColor: [15, 76, 117],
@@ -587,9 +660,9 @@
           fillColor: [245, 245, 245]
         },
         didParseCell: function(data) {
-          // Highlight flagged rows
+          // Highlight high priority rows
           const rowIndex = data.row.index;
-          if (rowIndex < results.length && (results[rowIndex].iqrFlag || results[rowIndex].rsfFlag)) {
+          if (rowIndex < results.length && results[rowIndex].investigationPriority === 'High Priority') {
             if (data.section === 'body') {
               data.cell.styles.fillColor = [255, 235, 235];
             }
@@ -597,13 +670,16 @@
         }
       });
 
-      // Add summary
+      // Add methodology note
       const finalY = doc.lastAutoTable.finalY + 10;
       doc.setFontSize(10);
-      doc.text('Analysis Summary:', 20, finalY);
-      doc.text('• IQR Method: Flags values beyond Q3 + 1.5 * IQR', 25, finalY + 8);
-      doc.text(`• RSF Method: Flags when largest value is ${document.getElementById('rsfThreshold').value}x larger than second largest`, 25, finalY + 16);
-      doc.text('• Flagged items may warrant further investigation', 25, finalY + 24);
+      doc.text('Nigrini\'s Largest Subset Test Methodology:', 20, finalY);
+      doc.setFontSize(8);
+      doc.text('• Groups transactions by subset identifier and calculates total amounts per subset', 25, finalY + 8);
+      doc.text('• Ranks subsets by total amount in descending order (largest first)', 25, finalY + 16);
+      doc.text('• Investigation priority based on materiality thresholds rather than statistical tests', 25, finalY + 24);
+      doc.text('• High Priority: Subsets >= configured percentage threshold (default >=15%)', 25, finalY + 32);
+      doc.text('• Focus on largest concentrations rather than statistical outlier detection', 25, finalY + 40);
 
       doc.save(`largest_subsets_analysis_${new Date().toISOString().slice(0,10)}.pdf`);
     }
