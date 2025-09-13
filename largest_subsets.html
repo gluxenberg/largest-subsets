@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Largest Subsets Test - Forensic Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e; color: #eee; line-height: 1.4;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    
+    header { 
+      background: #16213e; padding: 20px; margin-bottom: 30px; border-radius: 8px;
+      border-left: 4px solid #0f4c75;
+    }
+    h1 { color: #fff; font-size: 24px; }
+    .subtitle { color: #bbb; font-size: 14px; margin-top: 5px; }
+    
+    .section { 
+      background: #242442; padding: 25px; margin-bottom: 20px; 
+      border-radius: 8px; border: 1px solid #3a3a5c;
+    }
+    .section h2 { color: #fff; margin-bottom: 20px; font-size: 18px; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+    .form-group { display: flex; flex-direction: column; }
+    
+    label { color: #ccc; font-size: 13px; margin-bottom: 5px; font-weight: 500; }
+    input, select { 
+      padding: 10px; background: #1a1a2e; border: 1px solid #444; 
+      border-radius: 4px; color: #eee; font-size: 14px;
+    }
+    input:focus, select:focus { outline: none; border-color: #0f4c75; }
+    input[type="file"] { padding: 8px; }
+    
+    button { 
+      background: #0f4c75; color: white; border: none; padding: 12px 20px;
+      border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px;
+    }
+    button:hover:not(:disabled) { background: #1565c0; }
+    button:disabled { background: #555; cursor: not-allowed; opacity: 0.6; }
+    
+    .export-buttons {
+      display: flex; gap: 10px; margin-top: 15px;
+    }
+    .btn-csv { background: #2d5a2d; }
+    .btn-pdf { background: #5a2d2d; }
+    .btn-csv:hover:not(:disabled) { background: #3d7a3d; }
+    .btn-pdf:hover:not(:disabled) { background: #7a3d3d; }
+    
+    .stats { 
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; 
+      margin: 20px 0;
+    }
+    .stat { 
+      background: #1a1a2e; padding: 15px; border-radius: 6px; text-align: center; 
+      border: 1px solid #333;
+    }
+    .stat-value { font-size: 24px; font-weight: bold; color: #0f4c75; }
+    .stat-label { font-size: 12px; color: #bbb; margin-top: 5px; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+    th { background: #1a1a2e; color: #fff; font-weight: 600; cursor: pointer; }
+    th:hover { background: #252545; }
+    tbody tr:hover { background: #2a2a4a; }
+    .flagged { background: #4a1a1a !important; }
+    .flag-yes { color: #ff6b6b; font-weight: bold; }
+    .flag-no { color: #51cf66; }
+    
+    .chart-container { 
+      background: #1a1a2e; padding: 20px; border-radius: 6px; 
+      margin: 20px 0; border: 1px solid #333;
+    }
+    canvas { max-height: 400px; }
+    
+    .preview-table { 
+      max-height: 300px; overflow-y: auto; 
+      background: #1a1a2e; border-radius: 6px; border: 1px solid #333;
+    }
+    
+    .error { 
+      background: #4a1a1a; border: 1px solid #ff6b6b; color: #ffaaaa; 
+      padding: 15px; border-radius: 6px; margin: 15px 0;
+    }
+    .success { 
+      background: #1a4a1a; border: 1px solid #51cf66; color: #aaffaa; 
+      padding: 15px; border-radius: 6px; margin: 15px 0;
+    }
+    .results-header {
+      display: flex; justify-content: space-between; align-items: center; margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Largest Subsets Test</h1>
+      <div class="subtitle">Forensic Analytics Tool - Identify unusual patterns in transaction data</div>
+    </header>
+
+    <!-- File Upload Section -->
+    <div class="section">
+      <h2>1. Upload CSV File</h2>
+      <div class="form-group">
+        <label for="csvFile">Select CSV File:</label>
+        <input type="file" id="csvFile" accept=".csv" />
+      </div>
+      <div id="uploadStatus"></div>
+    </div>
+
+    <!-- Column Selection Section -->
+    <div class="section" id="columnSection" style="display: none;">
+      <h2>2. Select Columns</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="subsetColumn">Subset Column (e.g., Vendor ID):</label>
+          <select id="subsetColumn"></select>
+        </div>
+        <div class="form-group">
+          <label for="valueColumn">Value Column (amounts):</label>
+          <select id="valueColumn"></select>
+        </div>
+        <div class="form-group">
+          <label for="dateColumn">Date Column (optional):</label>
+          <select id="dateColumn"></select>
+        </div>
+      </div>
+      
+      <div class="form-grid" style="margin-top: 20px;">
+        <div class="form-group">
+          <label for="minTransactions">Min transactions per subset:</label>
+          <input type="number" id="minTransactions" value="1" min="1" />
+        </div>
+        <div class="form-group">
+          <label for="rsfThreshold">RSF threshold (flag ratio):</label>
+          <input type="number" id="rsfThreshold" value="3" step="0.1" min="1" />
+        </div>
+        <div class="form-group">
+          <button id="analyzeBtn" disabled>Run Analysis</button>
+        </div>
+      </div>
+
+      <!-- Data Preview -->
+      <h3 style="margin-top: 30px; color: #fff;">Data Preview (first 10 rows):</h3>
+      <div class="preview-table">
+        <table id="previewTable"></table>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="section" id="resultsSection" style="display: none;">
+      <h2>3. Analysis Results</h2>
+      
+      <!-- Statistics -->
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value" id="totalSubsets">0</div>
+          <div class="stat-label">Total Subsets</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="flaggedSubsets">0</div>
+          <div class="stat-label">Flagged Subsets</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="totalRows">0</div>
+          <div class="stat-label">Total Rows</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-container">
+        <h3 style="margin-bottom: 15px; color: #fff;">Top 20 Subsets by Largest Value</h3>
+        <canvas id="resultsChart"></canvas>
+      </div>
+
+      <!-- Results Table with Export Buttons -->
+      <div class="results-header">
+        <h3 style="color: #fff; margin: 0;">Detailed Results</h3>
+        <div class="export-buttons">
+          <button id="exportCsv" class="btn-csv">Export CSV</button>
+          <button id="exportPdf" class="btn-pdf">Export PDF</button>
+        </div>
+      </div>
+      
+      <div style="max-height: 500px; overflow-y: auto;">
+        <table id="resultsTable">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">Subset</th>
+              <th onclick="sortTable(1)">Largest Value</th>
+              <th onclick="sortTable(2)">Second Value</th>
+              <th onclick="sortTable(3)">RSF Ratio</th>
+              <th onclick="sortTable(4)">Count</th>
+              <th onclick="sortTable(5)">IQR Flag</th>
+              <th onclick="sortTable(6)">RSF Flag</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let csvData = [];
+    let headers = [];
+    let results = [];
+    let currentSort = { column: 1, direction: 'desc' };
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      setupEventListeners();
+    });
+
+    function setupEventListeners() {
+      // File upload
+      document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+      
+      // Analyze button
+      document.getElementById('analyzeBtn').addEventListener('click', runAnalysis);
+      
+      // Export buttons - these will be available after analysis
+      document.getElementById('exportCsv').addEventListener('click', exportToCsv);
+      document.getElementById('exportPdf').addEventListener('click', exportToPdf);
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const statusDiv = document.getElementById('uploadStatus');
+      statusDiv.innerHTML = '<div style="color: #ffa500;">Reading file...</div>';
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(parseResults) {
+          if (parseResults.errors.length > 0) {
+            statusDiv.innerHTML = `<div class="error">Error reading file: ${parseResults.errors[0].message}</div>`;
+            return;
+          }
+
+          csvData = parseResults.data;
+          headers = parseResults.meta.fields || Object.keys(csvData[0] || {});
+          
+          if (headers.length === 0) {
+            statusDiv.innerHTML = '<div class="error">No columns found in CSV file</div>';
+            return;
+          }
+
+          statusDiv.innerHTML = `<div class="success">File loaded successfully! ${csvData.length} rows, ${headers.length} columns</div>`;
+          
+          setupColumnSelectors();
+          showPreview();
+          document.getElementById('columnSection').style.display = 'block';
+        },
+        error: function(error) {
+          document.getElementById('uploadStatus').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+        }
+      });
+    }
+
+    function setupColumnSelectors() {
+      const subsetSelect = document.getElementById('subsetColumn');
+      const valueSelect = document.getElementById('valueColumn');
+      const dateSelect = document.getElementById('dateColumn');
+
+      // Clear existing options
+      subsetSelect.innerHTML = '<option value="">-- Select Column --</option>';
+      valueSelect.innerHTML = '<option value="">-- Select Column --</option>';
+      dateSelect.innerHTML = '<option value="">-- Select Column (Optional) --</option>';
+
+      // Add column options
+      headers.forEach(header => {
+        subsetSelect.innerHTML += `<option value="${header}">${header}</option>`;
+        valueSelect.innerHTML += `<option value="${header}">${header}</option>`;
+        dateSelect.innerHTML += `<option value="${header}">${header}</option>`;
+      });
+
+      // Add change listeners to enable/disable analyze button
+      subsetSelect.addEventListener('change', checkAnalyzeButton);
+      valueSelect.addEventListener('change', checkAnalyzeButton);
+    }
+
+    function checkAnalyzeButton() {
+      const subsetCol = document.getElementById('subsetColumn').value;
+      const valueCol = document.getElementById('valueColumn').value;
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      
+      analyzeBtn.disabled = !(subsetCol && valueCol);
+    }
+
+    function showPreview() {
+      const previewTable = document.getElementById('previewTable');
+      let html = '<thead><tr>';
+      
+      headers.forEach(header => {
+        html += `<th>${header}</th>`;
+      });
+      html += '</tr></thead><tbody>';
+
+      // Show first 10 rows
+      csvData.slice(0, 10).forEach(row => {
+        html += '<tr>';
+        headers.forEach(header => {
+          html += `<td>${row[header] || ''}</td>`;
+        });
+        html += '</tr>';
+      });
+
+      html += '</tbody>';
+      previewTable.innerHTML = html;
+    }
+
+    function runAnalysis() {
+      const subsetCol = document.getElementById('subsetColumn').value;
+      const valueCol = document.getElementById('valueColumn').value;
+      const minTrans = parseInt(document.getElementById('minTransactions').value) || 1;
+      const rsfThreshold = parseFloat(document.getElementById('rsfThreshold').value) || 3;
+
+      if (!subsetCol || !valueCol) return;
+
+      // Group data by subset
+      const groups = {};
+      
+      csvData.forEach(row => {
+        const subset = row[subsetCol];
+        const value = parseFloat(row[valueCol]);
+        
+        if (!subset || isNaN(value)) return;
+        
+        if (!groups[subset]) {
+          groups[subset] = [];
+        }
+        groups[subset].push(value);
+      });
+
+      // Analyze each group
+      results = [];
+      Object.keys(groups).forEach(subset => {
+        const values = groups[subset].sort((a, b) => b - a); // Sort descending
+        
+        if (values.length < minTrans) return;
+
+        const largest = values[0];
+        const second = values[1] || null;
+        const rsf = second ? largest / second : Infinity;
+        
+        results.push({
+          subset,
+          largest,
+          second,
+          rsf,
+          count: values.length,
+          iqrFlag: false, // Will calculate below
+          rsfFlag: rsf >= rsfThreshold
+        });
+      });
+
+      // Calculate IQR flags
+      const largestValues = results.map(r => r.largest);
+      const q1 = quantile(largestValues, 0.25);
+      const q3 = quantile(largestValues, 0.75);
+      const iqr = q3 - q1;
+      const upperBound = q3 + 1.5 * iqr;
+
+      results.forEach(result => {
+        result.iqrFlag = result.largest > upperBound;
+      });
+
+      // Sort by largest value descending
+      results.sort((a, b) => b.largest - a.largest);
+
+      displayResults();
+      document.getElementById('resultsSection').style.display = 'block';
+    }
+
+    function quantile(arr, q) {
+      const sorted = [...arr].sort((a, b) => a - b);
+      const pos = (sorted.length - 1) * q;
+      const base = Math.floor(pos);
+      const rest = pos - base;
+      if (sorted[base + 1] !== undefined) {
+        return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
+      } else {
+        return sorted[base];
+      }
+    }
+
+    function displayResults() {
+      // Update statistics
+      const flaggedCount = results.filter(r => r.iqrFlag || r.rsfFlag).length;
+      document.getElementById('totalSubsets').textContent = results.length;
+      document.getElementById('flaggedSubsets').textContent = flaggedCount;
+      document.getElementById('totalRows').textContent = csvData.length;
+
+      // Display table and chart
+      displayResultsTable();
+      displayChart();
+    }
+
+    function displayResultsTable() {
+      const tbody = document.querySelector('#resultsTable tbody');
+      tbody.innerHTML = '';
+
+      results.forEach(result => {
+        const row = tbody.insertRow();
+        if (result.iqrFlag || result.rsfFlag) {
+          row.classList.add('flagged');
+        }
+
+        row.innerHTML = `
+          <td>${result.subset}</td>
+          <td>$${result.largest.toLocaleString()}</td>
+          <td>${result.second ? '$' + result.second.toLocaleString() : '—'}</td>
+          <td>${isFinite(result.rsf) ? result.rsf.toFixed(2) : '∞'}</td>
+          <td>${result.count}</td>
+          <td class="${result.iqrFlag ? 'flag-yes' : 'flag-no'}">${result.iqrFlag ? 'YES' : 'NO'}</td>
+          <td class="${result.rsfFlag ? 'flag-yes' : 'flag-no'}">${result.rsfFlag ? 'YES' : 'NO'}</td>
+        `;
+      });
+    }
+
+    function displayChart() {
+      const ctx = document.getElementById('resultsChart').getContext('2d');
+      const top20 = results.slice(0, 20);
+      
+      if (window.myChart) {
+        window.myChart.destroy();
+      }
+
+      window.myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: top20.map(r => r.subset.length > 15 ? r.subset.substring(0, 15) + '...' : r.subset),
+          datasets: [{
+            label: 'Largest Value',
+            data: top20.map(r => r.largest),
+            backgroundColor: top20.map(r => (r.iqrFlag || r.rsfFlag) ? '#ff6b6b' : '#0f4c75'),
+            borderColor: '#333',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return '$' + value.toLocaleString();
+                },
+                color: '#ccc'
+              },
+              grid: { color: '#444' }
+            },
+            x: {
+              ticks: { color: '#ccc' },
+              grid: { color: '#444' }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `$${context.parsed.y.toLocaleString()}`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function sortTable(columnIndex) {
+      if (currentSort.column === columnIndex) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSort.column = columnIndex;
+        currentSort.direction = 'desc';
+      }
+
+      results.sort((a, b) => {
+        let aVal, bVal;
+        switch(columnIndex) {
+          case 0: aVal = a.subset; bVal = b.subset; break;
+          case 1: aVal = a.largest; bVal = b.largest; break;
+          case 2: aVal = a.second || 0; bVal = b.second || 0; break;
+          case 3: aVal = a.rsf; bVal = b.rsf; break;
+          case 4: aVal = a.count; bVal = b.count; break;
+          case 5: aVal = a.iqrFlag; bVal = b.iqrFlag; break;
+          case 6: aVal = a.rsfFlag; bVal = b.rsfFlag; break;
+        }
+
+        if (typeof aVal === 'string') {
+          return currentSort.direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        } else {
+          return currentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+      });
+
+      displayResultsTable();
+    }
+
+    function exportToCsv() {
+      const exportData = [
+        ['Subset', 'Largest Value', 'Second Value', 'RSF Ratio', 'Transaction Count', 'IQR Flag', 'RSF Flag', 'Overall Flag']
+      ];
+
+      results.forEach(result => {
+        exportData.push([
+          result.subset,
+          result.largest,
+          result.second || '',
+          isFinite(result.rsf) ? result.rsf.toFixed(2) : 'Infinity',
+          result.count,
+          result.iqrFlag ? 'YES' : 'NO',
+          result.rsfFlag ? 'YES' : 'NO',
+          (result.iqrFlag || result.rsfFlag) ? 'FLAGGED' : 'OK'
+        ]);
+      });
+
+      const csv = Papa.unparse(exportData);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `largest_subsets_analysis_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportToPdf() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      // Add header
+      doc.setFontSize(16);
+      doc.text('Largest Subsets Analysis Report', 20, 20);
+      
+      doc.setFontSize(10);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 30);
+      doc.text(`Total Subsets: ${results.length}`, 20, 35);
+      doc.text(`Flagged Subsets: ${results.filter(r => r.iqrFlag || r.rsfFlag).length}`, 20, 40);
+      doc.text(`Total Records: ${csvData.length}`, 20, 45);
+
+      // Prepare table data
+      const tableData = results.map(result => [
+        result.subset,
+        `$${result.largest.toLocaleString()}`,
+        result.second ? `$${result.second.toLocaleString()}` : '—',
+        isFinite(result.rsf) ? result.rsf.toFixed(2) : '∞',
+        result.count.toString(),
+        result.iqrFlag ? 'YES' : 'NO',
+        result.rsfFlag ? 'YES' : 'NO'
+      ]);
+
+      // Add table
+      doc.autoTable({
+        head: [['Subset', 'Largest Value', 'Second Value', 'RSF Ratio', 'Count', 'IQR Flag', 'RSF Flag']],
+        body: tableData,
+        startY: 55,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2
+        },
+        headStyles: {
+          fillColor: [15, 76, 117],
+          textColor: 255
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        },
+        didParseCell: function(data) {
+          // Highlight flagged rows
+          const rowIndex = data.row.index;
+          if (rowIndex < results.length && (results[rowIndex].iqrFlag || results[rowIndex].rsfFlag)) {
+            if (data.section === 'body') {
+              data.cell.styles.fillColor = [255, 235, 235];
+            }
+          }
+        }
+      });
+
+      // Add summary
+      const finalY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(10);
+      doc.text('Analysis Summary:', 20, finalY);
+      doc.text('• IQR Method: Flags values beyond Q3 + 1.5 * IQR', 25, finalY + 8);
+      doc.text(`• RSF Method: Flags when largest value is ${document.getElementById('rsfThreshold').value}x larger than second largest`, 25, finalY + 16);
+      doc.text('• Flagged items may warrant further investigation', 25, finalY + 24);
+
+      doc.save(`largest_subsets_analysis_${new Date().toISOString().slice(0,10)}.pdf`);
+    }
+  </script>
+</body>
+</html>
