@@ -1,688 +1,980 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Largest Subsets Test - Forensic Analytics</title>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #1a1a2e; color: #eee; line-height: 1.4;
-    }
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    
-    header { 
-      background: #16213e; padding: 20px; margin-bottom: 30px; border-radius: 8px;
-      border-left: 4px solid #0f4c75;
-    }
-    h1 { color: #fff; font-size: 24px; }
-    .subtitle { color: #bbb; font-size: 14px; margin-top: 5px; }
-    
-    .section { 
-      background: #242442; padding: 25px; margin-bottom: 20px; 
-      border-radius: 8px; border: 1px solid #3a3a5c;
-    }
-    .section h2 { color: #fff; margin-bottom: 20px; font-size: 18px; }
-    
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-    .form-group { display: flex; flex-direction: column; }
-    
-    label { color: #ccc; font-size: 13px; margin-bottom: 5px; font-weight: 500; }
-    input, select { 
-      padding: 10px; background: #1a1a2e; border: 1px solid #444; 
-      border-radius: 4px; color: #eee; font-size: 14px;
-    }
-    input:focus, select:focus { outline: none; border-color: #0f4c75; }
-    input[type="file"] { padding: 8px; }
-    
-    button { 
-      background: #0f4c75; color: white; border: none; padding: 12px 20px;
-      border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px;
-    }
-    button:hover:not(:disabled) { background: #1565c0; }
-    button:disabled { background: #555; cursor: not-allowed; opacity: 0.6; }
-    
-    .export-buttons {
-      display: flex; gap: 10px; margin-top: 15px;
-    }
-    .btn-csv { background: #2d5a2d; }
-    .btn-pdf { background: #5a2d2d; }
-    .btn-csv:hover:not(:disabled) { background: #3d7a3d; }
-    .btn-pdf:hover:not(:disabled) { background: #7a3d3d; }
-    
-    .stats { 
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; 
-      margin: 20px 0;
-    }
-    .stat { 
-      background: #1a1a2e; padding: 15px; border-radius: 6px; text-align: center; 
-      border: 1px solid #333;
-    }
-    .stat-value { font-size: 24px; font-weight: bold; color: #0f4c75; }
-    .stat-label { font-size: 12px; color: #bbb; margin-top: 5px; }
-    
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
-    th { background: #1a1a2e; color: #fff; font-weight: 600; cursor: pointer; }
-    th:hover { background: #252545; }
-    tbody tr:hover { background: #2a2a4a; }
-    .high-priority { background: #4a1a1a !important; }
-    .medium-priority { background: #4a3a1a !important; }
-    .review-priority { background: #3a3a1a !important; }
-    .priority-high { color: #ff6b6b; font-weight: bold; }
-    .priority-medium { color: #ffa500; font-weight: bold; }
-    .priority-review { color: #ffff00; }
-    .priority-standard { color: #51cf66; }
-    
-    .chart-container { 
-      background: #1a1a2e; padding: 20px; border-radius: 6px; 
-      margin: 20px 0; border: 1px solid #333;
-    }
-    canvas { max-height: 400px; }
-    
-    .preview-table { 
-      max-height: 300px; overflow-y: auto; 
-      background: #1a1a2e; border-radius: 6px; border: 1px solid #333;
-    }
-    
-    .error { 
-      background: #4a1a1a; border: 1px solid #ff6b6b; color: #ffaaaa; 
-      padding: 15px; border-radius: 6px; margin: 15px 0;
-    }
-    .success { 
-      background: #1a4a1a; border: 1px solid #51cf66; color: #aaffaa; 
-      padding: 15px; border-radius: 6px; margin: 15px 0;
-    }
-    .results-header {
-      display: flex; justify-content: space-between; align-items: center; margin: 20px 0;
-    }
-    .methodology-note {
-      background: #2d4a2d; border: 1px solid #51cf66; color: #ccffcc; 
-      padding: 15px; border-radius: 6px; margin: 15px 0; font-size: 13px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Largest Subsets Test - Forensic Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        
+        .section {
+            background: linear-gradient(145deg, #f8f9fa, #ffffff);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #3498db;
+        }
+        
+        .section h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 8px;
+        }
+        
+        .methodology-note {
+            background: linear-gradient(145deg, #e8f5e8, #ffffff);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #27ae60;
+            color: #2c3e50;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            color: #34495e;
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            color: #2c3e50;
+            transition: border-color 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        input[type="file"] {
+            border: 2px dashed #3498db;
+            background: #ecf0f1;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="file"]:hover {
+            border-color: #2980b9;
+            background: #d5dbdb;
+        }
+        
+        button {
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.3);
+        }
+        
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.6;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-csv {
+            background: linear-gradient(145deg, #27ae60, #219a52);
+        }
+        
+        .btn-csv:hover:not(:disabled) {
+            box-shadow: 0 6px 12px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-pdf {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+        }
+        
+        .btn-pdf:hover:not(:disabled) {
+            box-shadow: 0 6px 12px rgba(231, 76, 60, 0.3);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat {
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #3498db;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #9b59b6;
+        }
+        
+        .chart-container h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.3em;
+        }
+        
+        canvas {
+            max-height: 400px;
+        }
+        
+        .preview-table {
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #bdc3c7;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+            color: #2c3e50;
+        }
+        
+        th {
+            background: linear-gradient(145deg, #34495e, #2c3e50);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        th:hover {
+            background: linear-gradient(145deg, #4a6278, #34495e);
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .high-priority {
+            background: rgba(231, 76, 60, 0.1) !important;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .medium-priority {
+            background: rgba(243, 156, 18, 0.1) !important;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .review-priority {
+            background: rgba(155, 89, 182, 0.1) !important;
+            border-left: 4px solid #9b59b6;
+        }
+        
+        .priority-high {
+            color: #e74c3c;
+            font-weight: bold;
+            background: rgba(231, 76, 60, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        
+        .priority-medium {
+            color: #f39c12;
+            font-weight: bold;
+            background: rgba(243, 156, 18, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        
+        .priority-review {
+            color: #9b59b6;
+            font-weight: bold;
+            background: rgba(155, 89, 182, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        
+        .priority-standard {
+            color: #27ae60;
+            font-weight: bold;
+            background: rgba(39, 174, 96, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .results-header h3 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 1.3em;
+        }
+        
+        .error {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        
+        .success {
+            background: linear-gradient(145deg, #27ae60, #219a52);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #ecf0f1;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .footer a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .results-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Largest Subsets Test</h1>
-      <div class="subtitle">Forensic Analytics - Identify unusually large subset totals</div>
-    </header>
+    <div class="container">
+        <h1>Largest Subsets Test</h1>
+        <div class="subtitle">Forensic Analytics - Identify unusually large subset totals</div>
+        
+        <div class="methodology-note">
+            <strong>Methodology:</strong> This test groups transactions by subset identifier (vendor, branch, etc.), 
+            calculates total amounts per subset, then ranks them by size. The largest subsets are identified for investigation 
+            based on their <strong>ranking</strong>, <strong>percentage of total</strong>, and <strong>materiality</strong> - not statistical tests.
+        </div>
 
-    <div class="methodology-note">
-      <strong>Nigrini's Methodology:</strong> This test groups transactions by subset identifier (vendor, branch, etc.), 
-      calculates total amounts per subset, then ranks them by size. The largest subsets are identified for investigation 
-      based on their <strong>ranking</strong>, <strong>percentage of total</strong>, and <strong>materiality</strong> - not statistical tests.
+        <!-- File Upload Section -->
+        <div class="section">
+            <h2>1. Upload CSV File</h2>
+            <div class="form-group">
+                <label for="csvFile">Select CSV File:</label>
+                <input type="file" id="csvFile" accept=".csv" />
+            </div>
+            <div id="uploadStatus"></div>
+        </div>
+
+        <!-- Column Selection Section -->
+        <div class="section" id="columnSection" style="display: none;">
+            <h2>2. Configure Analysis</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="subsetColumn">Subset Column (e.g., Vendor ID, Branch):</label>
+                    <select id="subsetColumn"></select>
+                </div>
+                <div class="form-group">
+                    <label for="valueColumn">Amount Column:</label>
+                    <select id="valueColumn"></select>
+                </div>
+            </div>
+            
+            <!-- Materiality Thresholds Section -->
+            <h3 style="margin-top: 30px; color: #2c3e50; font-size: 1.2em;">Materiality Thresholds (% of Total)</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="highPriorityThreshold">High Priority (>= % of total):</label>
+                    <input type="number" id="highPriorityThreshold" value="15" min="1" max="100" step="0.1" />
+                </div>
+                <div class="form-group">
+                    <label for="mediumPriorityThreshold">Medium Priority (>= % of total):</label>
+                    <input type="number" id="mediumPriorityThreshold" value="8" min="1" max="100" step="0.1" />
+                </div>
+                <div class="form-group">
+                    <label for="reviewPriorityThreshold">Review Priority (>= % of total):</label>
+                    <input type="number" id="reviewPriorityThreshold" value="3" min="0.1" max="100" step="0.1" />
+                </div>
+            </div>
+            
+            <div class="methodology-note" style="margin-top: 15px;">
+                <strong>Materiality Guidance:</strong>
+                <br>• <strong>High Priority:</strong> Subsets requiring immediate investigation due to significant concentration risk
+                <br>• <strong>Medium Priority:</strong> Subsets warranting detailed review and enhanced testing  
+                <br>• <strong>Review Priority:</strong> Subsets for monitoring and sample testing based on business context
+                <br>• <strong>Standard:</strong> Below review threshold - routine monitoring sufficient
+            </div>
+
+            <div class="form-grid" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label for="minTransactions">Min transactions per subset:</label>
+                    <input type="number" id="minTransactions" value="1" min="1" />
+                </div>
+                <div class="form-group">
+                    <button id="analyzeBtn" disabled>Run Analysis</button>
+                </div>
+            </div>
+
+<div style="margin-top: 15px; padding: 15px; background: linear-gradient(145deg, #27ae60, #219a52); color: white; border-radius: 8px; text-align: center; box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3); font-weight: 600; font-size: 14px;">
+    ⚠️ After running analysis, scroll down to view the detailed results, charts, and export options.
+</div>
+
+<div class="methodology-note" style="margin-top: 15px; background: linear-gradient(145deg, #e8f4fd, #ffffff); border-left: 5px solid #3498db;">
+    <strong>Note:</strong> After running analysis, scroll down to view the detailed results, charts, and export options.
+</div>
+
+            <!-- Data Preview -->
+            <h3 style="margin-top: 30px; color: #2c3e50; font-size: 1.2em;">Data Preview (first 10 rows):</h3>
+            <div class="preview-table">
+                <table id="previewTable"></table>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="section" id="resultsSection" style="display: none;">
+            <h2>3. Analysis Results</h2>
+            
+            <!-- Statistics -->
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="totalSubsets">0</div>
+                    <div class="stat-label">Total Subsets</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="priorityBreakdown">H:0 M:0 R:0</div>
+                    <div class="stat-label">Priority Breakdown</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="totalAmount">$0</div>
+                    <div class="stat-label">Total Amount</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="topSubsetPct">0%</div>
+                    <div class="stat-label">Top Subset % of Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="totalRows">0</div>
+                    <div class="stat-label">Total Transactions</div>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="chart-container">
+                <h3>Top 25 Subsets by Total Amount</h3>
+                <canvas id="resultsChart"></canvas>
+            </div>
+
+            <!-- Results Table with Export Buttons -->
+            <div class="results-header">
+                <h3>Detailed Results (Sorted by Total Amount)</h3>
+                <div class="export-buttons">
+                    <button id="exportCsv" class="btn-csv">Export CSV</button>
+                    <button id="exportPdf" class="btn-pdf">Export PDF</button>
+                </div>
+            </div>
+            
+            <div style="max-height: 500px; overflow-y: auto; border-radius: 8px; border: 1px solid #bdc3c7;">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">Subset</th>
+                            <th onclick="sortTable(1)">Total Amount</th>
+                            <th onclick="sortTable(2)">Transaction Count</th>
+                            <th onclick="sortTable(3)">Average per Transaction</th>
+                            <th onclick="sortTable(4)">% of Total</th>
+                            <th onclick="sortTable(5)">Rank</th>
+                            <th onclick="sortTable(6)">Investigation Priority</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div style="margin-bottom: 8px;">
+                © 2025 Benford Analytics, LLC. All rights reserved.
+            </div>
+            <div>
+                <a href="mailto:info@benlytics.com">info@benlytics.com</a>
+            </div>
+        </div>
     </div>
 
-    <!-- File Upload Section -->
-    <div class="section">
-      <h2>1. Upload CSV File</h2>
-      <div class="form-group">
-        <label for="csvFile">Select CSV File:</label>
-        <input type="file" id="csvFile" accept=".csv" />
-      </div>
-      <div id="uploadStatus"></div>
-    </div>
+    <script>
+        // [Keep all existing JavaScript code exactly the same]
+        // Global variables
+        let csvData = [];
+        let headers = [];
+        let results = [];
+        let currentSort = { column: 1, direction: 'desc' };
 
-    <!-- Column Selection Section -->
-    <div class="section" id="columnSection" style="display: none;">
-      <h2>2. Configure Analysis</h2>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="subsetColumn">Subset Column (e.g., Vendor ID, Branch):</label>
-          <select id="subsetColumn"></select>
-        </div>
-        <div class="form-group">
-          <label for="valueColumn">Amount Column:</label>
-          <select id="valueColumn"></select>
-        </div>
-      </div>
-      
-      <!-- Materiality Thresholds Section -->
-      <h3 style="margin-top: 30px; color: #fff;">Materiality Thresholds (% of Total)</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="highPriorityThreshold">High Priority (>= % of total):</label>
-          <input type="number" id="highPriorityThreshold" value="15" min="1" max="100" step="0.1" />
-        </div>
-        <div class="form-group">
-          <label for="mediumPriorityThreshold">Medium Priority (>= % of total):</label>
-          <input type="number" id="mediumPriorityThreshold" value="8" min="1" max="100" step="0.1" />
-        </div>
-        <div class="form-group">
-          <label for="reviewPriorityThreshold">Review Priority (>= % of total):</label>
-          <input type="number" id="reviewPriorityThreshold" value="3" min="0.1" max="100" step="0.1" />
-        </div>
-      </div>
-      
-      <div class="methodology-note" style="margin-top: 15px;">
-        <strong>Materiality Guidance:</strong>
-        <br>• <strong>High Priority:</strong> Subsets requiring immediate investigation due to significant concentration risk
-        <br>• <strong>Medium Priority:</strong> Subsets warranting detailed review and enhanced testing  
-        <br>• <strong>Review Priority:</strong> Subsets for monitoring and sample testing based on business context
-        <br>• <strong>Standard:</strong> Below review threshold - routine monitoring sufficient
-      </div>
-
-      <div class="form-grid" style="margin-top: 20px;">
-        <div class="form-group">
-          <label for="minTransactions">Min transactions per subset:</label>
-          <input type="number" id="minTransactions" value="1" min="1" />
-        </div>
-        <div class="form-group">
-          <button id="analyzeBtn" disabled>Run Analysis</button>
-        </div>
-      </div>
-
-      <!-- Data Preview -->
-      <h3 style="margin-top: 30px; color: #fff;">Data Preview (first 10 rows):</h3>
-      <div class="preview-table">
-        <table id="previewTable"></table>
-      </div>
-    </div>
-
-    <!-- Results Section -->
-    <div class="section" id="resultsSection" style="display: none;">
-      <h2>3. Analysis Results</h2>
-      
-      <!-- Statistics -->
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-value" id="totalSubsets">0</div>
-          <div class="stat-label">Total Subsets</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value" id="priorityBreakdown">H:0 M:0 R:0</div>
-          <div class="stat-label">Priority Breakdown</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value" id="totalAmount">$0</div>
-          <div class="stat-label">Total Amount</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value" id="topSubsetPct">0%</div>
-          <div class="stat-label">Top Subset % of Total</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value" id="totalRows">0</div>
-          <div class="stat-label">Total Transactions</div>
-        </div>
-      </div>
-
-      <!-- Chart -->
-      <div class="chart-container">
-        <h3 style="margin-bottom: 15px; color: #fff;">Top 25 Subsets by Total Amount</h3>
-        <canvas id="resultsChart"></canvas>
-      </div>
-
-      <!-- Results Table with Export Buttons -->
-      <div class="results-header">
-        <h3 style="color: #fff; margin: 0;">Detailed Results (Sorted by Total Amount)</h3>
-        <div class="export-buttons">
-          <button id="exportCsv" class="btn-csv">Export CSV</button>
-          <button id="exportPdf" class="btn-pdf">Export PDF</button>
-        </div>
-      </div>
-      
-      <div style="max-height: 500px; overflow-y: auto;">
-        <table id="resultsTable">
-          <thead>
-            <tr>
-              <th onclick="sortTable(0)">Subset</th>
-              <th onclick="sortTable(1)">Total Amount</th>
-              <th onclick="sortTable(2)">Transaction Count</th>
-              <th onclick="sortTable(3)">Average per Transaction</th>
-              <th onclick="sortTable(4)">% of Total</th>
-              <th onclick="sortTable(5)">Rank</th>
-              <th onclick="sortTable(6)">Investigation Priority</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // Global variables
-    let csvData = [];
-    let headers = [];
-    let results = [];
-    let currentSort = { column: 1, direction: 'desc' };
-
-    // Initialize when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-      setupEventListeners();
-    });
-
-    function setupEventListeners() {
-      // File upload
-      document.getElementById('csvFile').addEventListener('change', handleFileUpload);
-      
-      // Analyze button
-      document.getElementById('analyzeBtn').addEventListener('click', runAnalysis);
-      
-      // Export buttons - these will be available after analysis
-      document.getElementById('exportCsv').addEventListener('click', exportToCsv);
-      document.getElementById('exportPdf').addEventListener('click', exportToPdf);
-    }
-
-    function handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const statusDiv = document.getElementById('uploadStatus');
-      statusDiv.innerHTML = '<div style="color: #ffa500;">Reading file...</div>';
-
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: function(parseResults) {
-          if (parseResults.errors.length > 0) {
-            statusDiv.innerHTML = `<div class="error">Error reading file: ${parseResults.errors[0].message}</div>`;
-            return;
-          }
-
-          csvData = parseResults.data;
-          headers = parseResults.meta.fields || Object.keys(csvData[0] || {});
-          
-          if (headers.length === 0) {
-            statusDiv.innerHTML = '<div class="error">No columns found in CSV file</div>';
-            return;
-          }
-
-          statusDiv.innerHTML = `<div class="success">File loaded successfully! ${csvData.length} rows, ${headers.length} columns</div>`;
-          
-          setupColumnSelectors();
-          showPreview();
-          document.getElementById('columnSection').style.display = 'block';
-        },
-        error: function(error) {
-          document.getElementById('uploadStatus').innerHTML = `<div class="error">Error: ${error.message}</div>`;
-        }
-      });
-    }
-
-    function setupColumnSelectors() {
-      const subsetSelect = document.getElementById('subsetColumn');
-      const valueSelect = document.getElementById('valueColumn');
-
-      // Clear existing options
-      subsetSelect.innerHTML = '<option value="">-- Select Column --</option>';
-      valueSelect.innerHTML = '<option value="">-- Select Column --</option>';
-
-      // Add column options
-      headers.forEach(header => {
-        subsetSelect.innerHTML += `<option value="${header}">${header}</option>`;
-        valueSelect.innerHTML += `<option value="${header}">${header}</option>`;
-      });
-
-      // Add change listeners to enable/disable analyze button
-      subsetSelect.addEventListener('change', checkAnalyzeButton);
-      valueSelect.addEventListener('change', checkAnalyzeButton);
-    }
-
-    function checkAnalyzeButton() {
-      const subsetCol = document.getElementById('subsetColumn').value;
-      const valueCol = document.getElementById('valueColumn').value;
-      const analyzeBtn = document.getElementById('analyzeBtn');
-      
-      analyzeBtn.disabled = !(subsetCol && valueCol);
-    }
-
-    function showPreview() {
-      const previewTable = document.getElementById('previewTable');
-      let html = '<thead><tr>';
-      
-      headers.forEach(header => {
-        html += `<th>${header}</th>`;
-      });
-      html += '</tr></thead><tbody>';
-
-      // Show first 10 rows
-      csvData.slice(0, 10).forEach(row => {
-        html += '<tr>';
-        headers.forEach(header => {
-          html += `<td>${row[header] || ''}</td>`;
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
         });
-        html += '</tr>';
-      });
 
-      html += '</tbody>';
-      previewTable.innerHTML = html;
-    }
-
-    function runAnalysis() {
-      const subsetCol = document.getElementById('subsetColumn').value;
-      const valueCol = document.getElementById('valueColumn').value;
-      const minTrans = parseInt(document.getElementById('minTransactions').value) || 1;
-      const highPriorityThreshold = parseFloat(document.getElementById('highPriorityThreshold').value) || 15;
-      const mediumPriorityThreshold = parseFloat(document.getElementById('mediumPriorityThreshold').value) || 8;
-      const reviewPriorityThreshold = parseFloat(document.getElementById('reviewPriorityThreshold').value) || 3;
-
-      if (!subsetCol || !valueCol) return;
-
-      // Group data by subset and calculate totals
-      const groups = {};
-      let totalAmount = 0;
-      let validRowCount = 0;
-      
-      csvData.forEach(row => {
-        const subset = row[subsetCol];
-        const value = parseFloat(row[valueCol]);
-        
-        if (!subset || isNaN(value)) return;
-        
-        if (!groups[subset]) {
-          groups[subset] = {
-            total: 0,
-            count: 0,
-            transactions: []
-          };
-        }
-        
-        groups[subset].total += value;
-        groups[subset].count++;
-        groups[subset].transactions.push(value);
-        totalAmount += value;
-        validRowCount++;
-      });
-
-      // Create results array with subset totals
-      results = [];
-      Object.keys(groups).forEach(subset => {
-        const group = groups[subset];
-        
-        if (group.count < minTrans) return;
-
-        const avgPerTransaction = group.total / group.count;
-        const percentOfTotal = (group.total / totalAmount) * 100;
-        
-        results.push({
-          subset,
-          total: group.total,
-          count: group.count,
-          avgPerTransaction,
-          percentOfTotal,
-          rank: 0, // Will be set below
-          investigationPriority: 'Standard' // Will be set below
-        });
-      });
-
-      // Sort by total amount descending (key part of Nigrini's test)
-      results.sort((a, b) => b.total - a.total);
-
-      // Assign ranks and investigation priorities based on materiality thresholds
-      results.forEach((result, index) => {
-        result.rank = index + 1;
-        
-        // Set investigation priority based on materiality thresholds
-        if (result.percentOfTotal >= highPriorityThreshold) {
-          result.investigationPriority = 'High Priority';
-        } else if (result.percentOfTotal >= mediumPriorityThreshold) {
-          result.investigationPriority = 'Medium Priority';
-        } else if (result.percentOfTotal >= reviewPriorityThreshold) {
-          result.investigationPriority = 'Review';
-        } else {
-          result.investigationPriority = 'Standard';
-        }
-      });
-
-      displayResults(totalAmount, validRowCount);
-      document.getElementById('resultsSection').style.display = 'block';
-    }
-
-    function displayResults(totalAmount, validRowCount) {
-      // Update statistics
-      const highPriorityCount = results.filter(r => r.investigationPriority === 'High Priority').length;
-      const mediumPriorityCount = results.filter(r => r.investigationPriority === 'Medium Priority').length;
-      const reviewPriorityCount = results.filter(r => r.investigationPriority === 'Review').length;
-      const topSubsetPct = results.length > 0 ? results[0].percentOfTotal : 0;
-      
-      document.getElementById('totalSubsets').textContent = results.length;
-      document.getElementById('priorityBreakdown').textContent = `H:${highPriorityCount} M:${mediumPriorityCount} R:${reviewPriorityCount}`;
-      document.getElementById('totalAmount').textContent = '$' + totalAmount.toLocaleString();
-      document.getElementById('topSubsetPct').textContent = topSubsetPct.toFixed(1) + '%';
-      document.getElementById('totalRows').textContent = validRowCount;
-
-      // Display table and chart
-      displayResultsTable();
-      displayChart();
-    }
-
-    function displayResultsTable() {
-      const tbody = document.querySelector('#resultsTable tbody');
-      tbody.innerHTML = '';
-
-      results.forEach(result => {
-        const row = tbody.insertRow();
-        
-        // Apply row styling based on priority
-        if (result.investigationPriority === 'High Priority') {
-          row.classList.add('high-priority');
-        } else if (result.investigationPriority === 'Medium Priority') {
-          row.classList.add('medium-priority');
-        } else if (result.investigationPriority === 'Review') {
-          row.classList.add('review-priority');
+        function setupEventListeners() {
+            // File upload
+            document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+            
+            // Analyze button
+            document.getElementById('analyzeBtn').addEventListener('click', runAnalysis);
+            
+            // Export buttons - these will be available after analysis
+            document.getElementById('exportCsv').addEventListener('click', exportToCsv);
+            document.getElementById('exportPdf').addEventListener('click', exportToPdf);
         }
 
-        const priorityClass = result.investigationPriority === 'High Priority' ? 'priority-high' : 
-                             result.investigationPriority === 'Medium Priority' ? 'priority-medium' : 
-                             result.investigationPriority === 'Review' ? 'priority-review' : 'priority-standard';
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-        row.innerHTML = `
-          <td>${result.subset}</td>
-          <td>$${result.total.toLocaleString()}</td>
-          <td>${result.count}</td>
-          <td>$${result.avgPerTransaction.toLocaleString()}</td>
-          <td>${result.percentOfTotal.toFixed(1)}%</td>
-          <td>${result.rank}</td>
-          <td class="${priorityClass}">${result.investigationPriority}</td>
-        `;
-      });
-    }
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = '<div style="color: #f39c12;">Reading file...</div>';
 
-    function displayChart() {
-      const ctx = document.getElementById('resultsChart').getContext('2d');
-      const top25 = results.slice(0, 25);
-      
-      if (window.myChart) {
-        window.myChart.destroy();
-      }
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(parseResults) {
+                    if (parseResults.errors.length > 0) {
+                        statusDiv.innerHTML = `<div class="error">Error reading file: ${parseResults.errors[0].message}</div>`;
+                        return;
+                    }
 
-      window.myChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: top25.map(r => r.subset.length > 15 ? r.subset.substring(0, 15) + '...' : r.subset),
-          datasets: [{
-            label: 'Total Amount',
-            data: top25.map(r => r.total),
-            backgroundColor: top25.map(r => r.investigationPriority === 'High Priority' ? '#ff6b6b' : 
-                                           r.investigationPriority === 'Medium Priority' ? '#ffa500' :
-                                           r.investigationPriority === 'Review' ? '#ffff00' : '#0f4c75'),
-            borderColor: '#333',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return '$' + value.toLocaleString();
+                    csvData = parseResults.data;
+                    headers = parseResults.meta.fields || Object.keys(csvData[0] || {});
+                    
+                    if (headers.length === 0) {
+                        statusDiv.innerHTML = '<div class="error">No columns found in CSV file</div>';
+                        return;
+                    }
+
+                    statusDiv.innerHTML = `<div class="success">File loaded successfully! ${csvData.length} rows, ${headers.length} columns</div>`;
+                    
+                    setupColumnSelectors();
+                    showPreview();
+                    document.getElementById('columnSection').style.display = 'block';
                 },
-                color: '#ccc'
-              },
-              grid: { color: '#444' }
-            },
-            x: {
-              ticks: { color: '#ccc', maxRotation: 45 },
-              grid: { color: '#444' }
-            }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const result = top25[context.dataIndex];
-                  return [
-                    `Total: $${context.parsed.y.toLocaleString()}`,
-                    `Rank: ${result.rank}`,
-                    `Transactions: ${result.count}`,
-                    `% of Total: ${result.percentOfTotal.toFixed(1)}%`,
-                    `Priority: ${result.investigationPriority}`
-                  ];
+                error: function(error) {
+                    document.getElementById('uploadStatus').innerHTML = `<div class="error">Error: ${error.message}</div>`;
                 }
-              }
+            });
+        }
+
+        function setupColumnSelectors() {
+            const subsetSelect = document.getElementById('subsetColumn');
+            const valueSelect = document.getElementById('valueColumn');
+
+            // Clear existing options
+            subsetSelect.innerHTML = '<option value="">-- Select Column --</option>';
+            valueSelect.innerHTML = '<option value="">-- Select Column --</option>';
+
+            // Add column options
+            headers.forEach(header => {
+                subsetSelect.innerHTML += `<option value="${header}">${header}</option>`;
+                valueSelect.innerHTML += `<option value="${header}">${header}</option>`;
+            });
+
+            // Add change listeners to enable/disable analyze button
+            subsetSelect.addEventListener('change', checkAnalyzeButton);
+            valueSelect.addEventListener('change', checkAnalyzeButton);
+        }
+
+        function checkAnalyzeButton() {
+            const subsetCol = document.getElementById('subsetColumn').value;
+            const valueCol = document.getElementById('valueColumn').value;
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            analyzeBtn.disabled = !(subsetCol && valueCol);
+        }
+
+        function showPreview() {
+            const previewTable = document.getElementById('previewTable');
+            let html = '<thead><tr>';
+            
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            // Show first 10 rows
+            csvData.slice(0, 10).forEach(row => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${row[header] || ''}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody>';
+            previewTable.innerHTML = html;
+        }
+
+        function runAnalysis() {
+            const subsetCol = document.getElementById('subsetColumn').value;
+            const valueCol = document.getElementById('valueColumn').value;
+            const minTrans = parseInt(document.getElementById('minTransactions').value) || 1;
+            const highPriorityThreshold = parseFloat(document.getElementById('highPriorityThreshold').value) || 15;
+            const mediumPriorityThreshold = parseFloat(document.getElementById('mediumPriorityThreshold').value) || 8;
+            const reviewPriorityThreshold = parseFloat(document.getElementById('reviewPriorityThreshold').value) || 3;
+
+            if (!subsetCol || !valueCol) return;
+
+            // Group data by subset and calculate totals
+            const groups = {};
+            let totalAmount = 0;
+            let validRowCount = 0;
+            
+            csvData.forEach(row => {
+                const subset = row[subsetCol];
+                const value = parseFloat(row[valueCol]);
+                
+                if (!subset || isNaN(value)) return;
+                
+                if (!groups[subset]) {
+                    groups[subset] = {
+                        total: 0,
+                        count: 0,
+                        transactions: []
+                    };
+                }
+                
+                groups[subset].total += value;
+                groups[subset].count++;
+                groups[subset].transactions.push(value);
+                totalAmount += value;
+                validRowCount++;
+            });
+
+            // Create results array with subset totals
+            results = [];
+            Object.keys(groups).forEach(subset => {
+                const group = groups[subset];
+                
+                if (group.count < minTrans) return;
+
+                const avgPerTransaction = group.total / group.count;
+                const percentOfTotal = (group.total / totalAmount) * 100;
+                
+                results.push({
+                    subset,
+                    total: group.total,
+                    count: group.count,
+                    avgPerTransaction,
+                    percentOfTotal,
+                    rank: 0, // Will be set below
+                    investigationPriority: 'Standard' // Will be set below
+                });
+            });
+
+            // Sort by total amount descending (key part of Nigrini's test)
+            results.sort((a, b) => b.total - a.total);
+
+            // Assign ranks and investigation priorities based on materiality thresholds
+            results.forEach((result, index) => {
+                result.rank = index + 1;
+                
+                // Set investigation priority based on materiality thresholds
+                if (result.percentOfTotal >= highPriorityThreshold) {
+                    result.investigationPriority = 'High Priority';
+                } else if (result.percentOfTotal >= mediumPriorityThreshold) {
+                    result.investigationPriority = 'Medium Priority';
+                } else if (result.percentOfTotal >= reviewPriorityThreshold) {
+                    result.investigationPriority = 'Review';
+                } else {
+                    result.investigationPriority = 'Standard';
+                }
+            });
+
+            displayResults(totalAmount, validRowCount);
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function displayResults(totalAmount, validRowCount) {
+            // Update statistics
+            const highPriorityCount = results.filter(r => r.investigationPriority === 'High Priority').length;
+            const mediumPriorityCount = results.filter(r => r.investigationPriority === 'Medium Priority').length;
+            const reviewPriorityCount = results.filter(r => r.investigationPriority === 'Review').length;
+            const topSubsetPct = results.length > 0 ? results[0].percentOfTotal : 0;
+            
+            document.getElementById('totalSubsets').textContent = results.length;
+            document.getElementById('priorityBreakdown').textContent = `H:${highPriorityCount} M:${mediumPriorityCount} R:${reviewPriorityCount}`;
+            document.getElementById('totalAmount').textContent = '$' + totalAmount.toLocaleString();
+            document.getElementById('topSubsetPct').textContent = topSubsetPct.toFixed(1) + '%';
+            document.getElementById('totalRows').textContent = validRowCount;
+
+            // Display table and chart
+            displayResultsTable();
+            displayChart();
+        }
+
+        function displayResultsTable() {
+            const tbody = document.querySelector('#resultsTable tbody');
+            tbody.innerHTML = '';
+
+            results.forEach(result => {
+                const row = tbody.insertRow();
+                
+                // Apply row styling based on priority
+                if (result.investigationPriority === 'High Priority') {
+                    row.classList.add('high-priority');
+                } else if (result.investigationPriority === 'Medium Priority') {
+                    row.classList.add('medium-priority');
+                } else if (result.investigationPriority === 'Review') {
+                    row.classList.add('review-priority');
+                }
+
+                const priorityClass = result.investigationPriority === 'High Priority' ? 'priority-high' : 
+                                     result.investigationPriority === 'Medium Priority' ? 'priority-medium' : 
+                                     result.investigationPriority === 'Review' ? 'priority-review' : 'priority-standard';
+
+                row.innerHTML = `
+                    <td>${result.subset}</td>
+                    <td>$${result.total.toLocaleString()}</td>
+                    <td>${result.count}</td>
+                    <td>$${result.avgPerTransaction.toLocaleString()}</td>
+                    <td>${result.percentOfTotal.toFixed(1)}%</td>
+                    <td>${result.rank}</td>
+                    <td><span class="${priorityClass}">${result.investigationPriority}</span></td>
+                `;
+            });
+        }
+
+        function displayChart() {
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            const top25 = results.slice(0, 25);
+            
+            if (window.myChart) {
+                window.myChart.destroy();
             }
-          }
+
+            window.myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: top25.map(r => r.subset.length > 15 ? r.subset.substring(0, 15) + '...' : r.subset),
+                    datasets: [{
+                        label: 'Total Amount',
+                        data: top25.map(r => r.total),
+                        backgroundColor: top25.map(r => r.investigationPriority === 'High Priority' ? '#e74c3c' : 
+                                                       r.investigationPriority === 'Medium Priority' ? '#f39c12' :
+                                                       r.investigationPriority === 'Review' ? '#9b59b6' : '#3498db'),
+                        borderColor: '#2c3e50',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                },
+                                color: '#7f8c8d'
+                            },
+                            grid: { color: '#ecf0f1' }
+                        },
+                        x: {
+                            ticks: { color: '#7f8c8d', maxRotation: 45 },
+                            grid: { color: '#ecf0f1' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const result = top25[context.dataIndex];
+                                    return [
+                                        `Total: $${context.parsed.y.toLocaleString()}`,
+                                        `Rank: ${result.rank}`,
+                                        `Transactions: ${result.count}`,
+                                        `% of Total: ${result.percentOfTotal.toFixed(1)}%`,
+                                        `Priority: ${result.investigationPriority}`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
-      });
-    }
 
-    function sortTable(columnIndex) {
-      if (currentSort.column === columnIndex) {
-        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-      } else {
-        currentSort.column = columnIndex;
-        currentSort.direction = 'desc';
-      }
-
-      results.sort((a, b) => {
-        let aVal, bVal;
-        switch(columnIndex) {
-          case 0: aVal = a.subset; bVal = b.subset; break;
-          case 1: aVal = a.total; bVal = b.total; break;
-          case 2: aVal = a.count; bVal = b.count; break;
-          case 3: aVal = a.avgPerTransaction; bVal = b.avgPerTransaction; break;
-          case 4: aVal = a.percentOfTotal; bVal = b.percentOfTotal; break;
-          case 5: aVal = a.rank; bVal = b.rank; break;
-          case 6: aVal = a.investigationPriority; bVal = b.investigationPriority; break;
-        }
-
-        if (typeof aVal === 'string') {
-          return currentSort.direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-        } else {
-          return currentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
-        }
-      });
-
-      displayResultsTable();
-    }
-
-    function exportToCsv() {
-      const exportData = [
-        ['Rank', 'Subset', 'Total Amount', 'Transaction Count', 'Average per Transaction', 'Percent of Total', 'Investigation Priority']
-      ];
-
-      results.forEach(result => {
-        exportData.push([
-          result.rank,
-          result.subset,
-          result.total.toFixed(2),
-          result.count,
-          result.avgPerTransaction.toFixed(2),
-          result.percentOfTotal.toFixed(2),
-          result.investigationPriority
-        ]);
-      });
-
-      const csv = Papa.unparse(exportData);
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `largest_subsets_analysis_${new Date().toISOString().slice(0,10)}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }
-
-    function exportToPdf() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      // Add header
-      doc.setFontSize(16);
-      doc.text('Largest Subsets Analysis Report', 20, 20);
-      doc.setFontSize(10);
-      doc.text('Mark Nigrini\'s Forensic Analytics Method', 20, 25);
-      
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 35);
-      doc.text(`Total Subsets Analyzed: ${results.length}`, 20, 40);
-      doc.text(`Priority Breakdown: ${document.getElementById('priorityBreakdown').textContent}`, 20, 45);
-      doc.text(`Total Transactions: ${document.getElementById('totalRows').textContent}`, 20, 50);
-      doc.text(`Total Amount: ${document.getElementById('totalAmount').textContent}`, 20, 55);
-      doc.text(`Largest Subset %: ${document.getElementById('topSubsetPct').textContent}`, 20, 60);
-      
-      const highThreshold = document.getElementById('highPriorityThreshold').value;
-      const mediumThreshold = document.getElementById('mediumPriorityThreshold').value;
-      const reviewThreshold = document.getElementById('reviewPriorityThreshold').value;
-      doc.text(`Materiality Thresholds: High >=${highThreshold}%, Medium >=${mediumThreshold}%, Review >=${reviewThreshold}%`, 20, 65);
-
-      // Prepare table data
-      const tableData = results.map(result => [
-        result.rank.toString(),
-        result.subset,
-        `$${result.total.toLocaleString()}`,
-        result.count.toString(),
-        `$${result.avgPerTransaction.toLocaleString()}`,
-        `${result.percentOfTotal.toFixed(1)}%`,
-        result.investigationPriority
-      ]);
-
-      // Add table
-      doc.autoTable({
-        head: [['Rank', 'Subset', 'Total Amount', 'Count', 'Avg/Trans', '% Total', 'Priority']],
-        body: tableData,
-        startY: 75,
-        styles: {
-          fontSize: 7,
-          cellPadding: 1.5
-        },
-        headStyles: {
-          fillColor: [15, 76, 117],
-          textColor: 255
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        },
-        didParseCell: function(data) {
-          // Highlight high priority rows
-          const rowIndex = data.row.index;
-          if (rowIndex < results.length && results[rowIndex].investigationPriority === 'High Priority') {
-            if (data.section === 'body') {
-              data.cell.styles.fillColor = [255, 235, 235];
+        function sortTable(columnIndex) {
+            if (currentSort.column === columnIndex) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = columnIndex;
+                currentSort.direction = 'desc';
             }
-          }
+
+            results.sort((a, b) => {
+                let aVal, bVal;
+                switch(columnIndex) {
+                    case 0: aVal = a.subset; bVal = b.subset; break;
+                    case 1: aVal = a.total; bVal = b.total; break;
+                    case 2: aVal = a.count; bVal = b.count; break;
+                    case 3: aVal = a.avgPerTransaction; bVal = b.avgPerTransaction; break;
+                    case 4: aVal = a.percentOfTotal; bVal = b.percentOfTotal; break;
+                    case 5: aVal = a.rank; bVal = b.rank; break;
+                    case 6: aVal = a.investigationPriority; bVal = b.investigationPriority; break;
+                }
+
+                if (typeof aVal === 'string') {
+                    return currentSort.direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                } else {
+                    return currentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
+                }
+            });
+
+            displayResultsTable();
         }
-      });
 
-      // Add methodology note
-      const finalY = doc.lastAutoTable.finalY + 10;
-      doc.setFontSize(10);
-      doc.text('Nigrini\'s Largest Subset Test Methodology:', 20, finalY);
-      doc.setFontSize(8);
-      doc.text('• Groups transactions by subset identifier and calculates total amounts per subset', 25, finalY + 8);
-      doc.text('• Ranks subsets by total amount in descending order (largest first)', 25, finalY + 16);
-      doc.text('• Investigation priority based on materiality thresholds rather than statistical tests', 25, finalY + 24);
-      doc.text('• High Priority: Subsets >= configured percentage threshold (default >=15%)', 25, finalY + 32);
-      doc.text('• Focus on largest concentrations rather than statistical outlier detection', 25, finalY + 40);
+        function exportToCsv() {
+            const exportData = [
+                ['Rank', 'Subset', 'Total Amount', 'Transaction Count', 'Average per Transaction', 'Percent of Total', 'Investigation Priority']
+            ];
 
-      doc.save(`largest_subsets_analysis_${new Date().toISOString().slice(0,10)}.pdf`);
-    }
-  </script>
+            results.forEach(result => {
+                exportData.push([
+                    result.rank,
+                    result.subset,
+                    result.total.toFixed(2),
+                    result.count,
+                    result.avgPerTransaction.toFixed(2),
+                    result.percentOfTotal.toFixed(2),
+                    result.investigationPriority
+                ]);
+            });
+
+            const csv = Papa.unparse(exportData);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `largest_subsets_analysis_${new Date().toISOString().slice(0,10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportToPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Add header
+            doc.setFontSize(16);
+            doc.text('Largest Subsets Analysis Report', 20, 20);
+            doc.setFontSize(10);
+            doc.text('Mark Nigrini\'s Forensic Analytics Method', 20, 25);
+            
+            doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 35);
+            doc.text(`Total Subsets Analyzed: ${results.length}`, 20, 40);
+            doc.text(`Priority Breakdown: ${document.getElementById('priorityBreakdown').textContent}`, 20, 45);
+            doc.text(`Total Transactions: ${document.getElementById('totalRows').textContent}`, 20, 50);
+            doc.text(`Total Amount: ${document.getElementById('totalAmount').textContent}`, 20, 55);
+            doc.text(`Largest Subset %: ${document.getElementById('topSubsetPct').textContent}`, 20, 60);
+            
+            const highThreshold = document.getElementById('highPriorityThreshold').value;
+            const mediumThreshold = document.getElementById('mediumPriorityThreshold').value;
+            const reviewThreshold = document.getElementById('reviewPriorityThreshold').value;
+            doc.text(`Materiality Thresholds: High >=${highThreshold}%, Medium >=${mediumThreshold}%, Review >=${reviewThreshold}%`, 20, 65);
+
+            // Prepare table data
+            const tableData = results.map(result => [
+                result.rank.toString(),
+                result.subset,
+                `$${result.total.toLocaleString()}`,
+                result.count.toString(),
+                `$${result.avgPerTransaction.toLocaleString()}`,
+                `${result.percentOfTotal.toFixed(1)}%`,
+                result.investigationPriority
+            ]);
+
+            // Add table
+            doc.autoTable({
+                head: [['Rank', 'Subset', 'Total Amount', 'Count', 'Avg/Trans', '% Total', 'Priority']],
+                body: tableData,
+                startY: 75,
+                styles: {
+                    fontSize: 7,
+                    cellPadding: 1.5
+                },
+                headStyles: {
+                    fillColor: [52, 73, 94],
+                    textColor: 255
+                },
+                alternateRowStyles: {
+                    fillColor: [248, 249, 250]
+                },
+                didParseCell: function(data) {
+                    // Highlight high priority rows
+                    const rowIndex = data.row.index;
+                    if (rowIndex < results.length && results[rowIndex].investigationPriority === 'High Priority') {
+                        if (data.section === 'body') {
+                            data.cell.styles.fillColor = [231, 76, 60];
+                            data.cell.styles.textColor = 255;
+                        }
+                    }
+                }
+            });
+
+            // Add methodology note
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(10);
+            doc.text('Nigrini\'s Largest Subset Test Methodology:', 20, finalY);
+            doc.setFontSize(8);
+            doc.text('• Groups transactions by subset identifier and calculates total amounts per subset', 25, finalY + 8);
+            doc.text('• Ranks subsets by total amount in descending order (largest first)', 25, finalY + 16);
+            doc.text('• Investigation priority based on materiality thresholds rather than statistical tests', 25, finalY + 24);
+            doc.text('• High Priority: Subsets >= configured percentage threshold (default >=15%)', 25, finalY + 32);
+            doc.text('• Focus on largest concentrations rather than statistical outlier detection', 25, finalY + 40);
+
+            doc.save(`largest_subsets_analysis_${new Date().toISOString().slice(0,10)}.pdf`);
+        }
+    </script>
 </body>
 </html>
