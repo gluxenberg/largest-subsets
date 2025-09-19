@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -385,7 +386,7 @@
 <body>
     <div class="container">
         <h1>Largest Subsets Test</h1>
-        <div class="subtitle">Forensic Analytics - Identify unusually large subset totals</div>
+       <div class="subtitle">Forensic Analytics - Identify unusually large subset totals (CSV/Excel)</div>
         
         <div class="methodology-note">
             <strong>Methodology:</strong> This test groups transactions by subset identifier (vendor, branch, etc.), 
@@ -395,10 +396,10 @@
 
         <!-- File Upload Section -->
         <div class="section">
-            <h2>1. Upload CSV File</h2>
+           <h2>1. Upload CSV or Excel File</h2>
             <div class="form-group">
-                <label for="csvFile">Select CSV File:</label>
-                <input type="file" id="csvFile" accept=".csv" />
+                <label for="csvFile">Select CSV or Excel File:</label>
+                <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" />
             </div>
             <div id="uploadStatus"></div>
         </div>
@@ -559,41 +560,108 @@
             document.getElementById('exportPdf').addEventListener('click', exportToPdf);
         }
 
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+function parseCurrency(value) {
+    if (value === null || value === undefined) return NaN;
+    if (typeof value === 'number') return isFinite(value) ? value : NaN;
+    
+    const str = String(value).trim();
+    if (!str) return NaN;
 
-            const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.innerHTML = '<div style="color: #f39c12;">Reading file...</div>';
+    // Handle negative parentheses notation like (1,234.56)
+    const isParenNegative = /^\s*\(.*\)\s*$/.test(str);
+    
+    // Remove currency symbols, commas, spaces, and parentheses
+    const cleaned = str
+        .replace(/[$€£¥₹₽₩₪₨₵₡₦₴₸₮₯₲₱,\s()]/g, '')
+        .replace(/[^\d.\-]/g, '');
 
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                complete: function(parseResults) {
-                    if (parseResults.errors.length > 0) {
-                        statusDiv.innerHTML = `<div class="error">Error reading file: ${parseResults.errors[0].message}</div>`;
-                        return;
-                    }
+    let num = parseFloat(cleaned);
+    if (!isFinite(num)) return NaN;
+    
+    // Apply negative if parentheses were used
+    if (isParenNegative && num > 0) num = -num;
+    
+    return num;
+}
 
-                    csvData = parseResults.data;
-                    headers = parseResults.meta.fields || Object.keys(csvData[0] || {});
-                    
-                    if (headers.length === 0) {
-                        statusDiv.innerHTML = '<div class="error">No columns found in CSV file</div>';
-                        return;
-                    }
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-                    statusDiv.innerHTML = `<div class="success">File loaded successfully! ${csvData.length} rows, ${headers.length} columns</div>`;
-                    
-                    setupColumnSelectors();
-                    showPreview();
-                    document.getElementById('columnSection').style.display = 'block';
-                },
-                error: function(error) {
-                    document.getElementById('uploadStatus').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+    const statusDiv = document.getElementById('uploadStatus');
+    statusDiv.innerHTML = '<div style="color: #f39c12;">Reading file...</div>';
+
+    const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+
+    if (isExcel) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: "array" });
+                const firstSheet = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheet];
+                const parsedRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                
+                if (parsedRows.length === 0) {
+                    statusDiv.innerHTML = '<div class="error">Excel file appears to be empty</div>';
+                    return;
                 }
-            });
-        }
+
+                // Filter out completely empty rows
+                csvData = parsedRows.filter(row => {
+                    return Object.values(row).some(v => v !== null && String(v).trim() !== '');
+                });
+                
+                headers = Object.keys(csvData[0] || {});
+                
+                if (headers.length === 0) {
+                    statusDiv.innerHTML = '<div class="error">No columns found in Excel file</div>';
+                    return;
+                }
+
+                statusDiv.innerHTML = `<div class="success">Excel file loaded successfully! ${csvData.length} rows, ${headers.length} columns</div>`;
+                
+                setupColumnSelectors();
+                showPreview();
+                document.getElementById('columnSection').style.display = 'block';
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">Error reading Excel file: ${error.message}</div>`;
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        // Original CSV parsing code
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(parseResults) {
+                if (parseResults.errors.length > 0) {
+                    statusDiv.innerHTML = `<div class="error">Error reading file: ${parseResults.errors[0].message}</div>`;
+                    return;
+                }
+
+                csvData = parseResults.data;
+                headers = parseResults.meta.fields || Object.keys(csvData[0] || {});
+                
+                if (headers.length === 0) {
+                    statusDiv.innerHTML = '<div class="error">No columns found in CSV file</div>';
+                    return;
+                }
+
+                statusDiv.innerHTML = `<div class="success">File loaded successfully! ${csvData.length} rows, ${headers.length} columns</div>`;
+                
+                setupColumnSelectors();
+                showPreview();
+                document.getElementById('columnSection').style.display = 'block';
+            },
+            error: function(error) {
+                statusDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        });
+    }
+}
 
         function setupColumnSelectors() {
             const subsetSelect = document.getElementById('subsetColumn');
@@ -659,11 +727,11 @@
             let totalAmount = 0;
             let validRowCount = 0;
             
-            csvData.forEach(row => {
-                const subset = row[subsetCol];
-                const value = parseFloat(row[valueCol]);
-                
-                if (!subset || isNaN(value)) return;
+csvData.forEach(row => {
+    const subset = row[subsetCol];
+    const value = parseCurrency(row[valueCol]); // Use new currency parser
+    
+    if (!subset || isNaN(value)) return;
                 
                 if (!groups[subset]) {
                     groups[subset] = {

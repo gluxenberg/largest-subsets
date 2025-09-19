@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "dev": "http-server . -p 3000",
+    "start": "http-server . -p 3000",
+    "build": "echo 'No build step needed for HTML project'"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.8.4",
+    "http-server": "^14.1.1"
+  }
+}
